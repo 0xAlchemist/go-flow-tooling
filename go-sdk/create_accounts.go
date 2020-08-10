@@ -132,11 +132,22 @@ func createAccount(node string, user Account, service Account, code []byte) stri
 }
 
 func main() {
-	const numberOfAccounts = 4
-	var counter = 0
+	// Create NFT standard account
+	// Create DemoToken account
+	// Create Rocks account
+	// Create Auction account
 
-	for counter < numberOfAccounts {
-		// createAccount()
-		counter++
-	}
+	// Setup DemoToken Vault capabilities
+	// Setup Rock Collection capabilities
+
+	// Mint and deposit NFTs
+	// Mint and deposit FTs
+
+	// Run Check Setup script
+
+	// Create auction collection
+
+	// Run check listings script
+
+	// Start the auction
 }
