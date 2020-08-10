@@ -136,7 +136,7 @@ func main() {
 	var counter = 0
 
 	for counter < numberOfAccounts {
-		// createNewAccount()
+		// createAccount()
 		counter++
 	}
 }
