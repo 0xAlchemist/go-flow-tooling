@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"os"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/client"
 	"github.com/onflow/flow-go-sdk/crypto"
@@ -42,6 +44,7 @@ func readFile(path string) []byte {
 
 func handle(err error) {
 	if err != nil {
+		log.Fatal(err)
 		panic(err)
 	}
 }
@@ -66,6 +69,7 @@ func getWalletAccounts() Wallet {
 }
 
 func accountInfo(account Account) (crypto.PrivateKey, crypto.SignatureAlgorithm, crypto.HashAlgorithm) {
+
 	sigAlgo := crypto.StringToSignatureAlgorithm(account.SigAlgo)
 	hashAlgo := crypto.StringToHashAlgorithm(account.HashAlgo)
 	privateKey, err := crypto.DecodePrivateKeyHex(sigAlgo, account.PrivateKey)
@@ -126,12 +130,20 @@ func createAccount(node string, user Account, service Account, code []byte) stri
 				address = accountCreatedEvent.Address()
 			}
 		}
+	} else {
+		spew.Dump(result)
 	}
 
 	return address.Hex()
 }
 
 func main() {
+	var wallet = getWalletAccounts()
+	var node = "127.0.0.1:3569"
+	var accounts = wallet.Accounts
+	var account = createAccount(node, accounts.DemoToken, accounts.Service, nil)
+
+	log.Println(account)
 	// Create NFT standard account
 	// Create DemoToken account
 	// Create Rocks account
