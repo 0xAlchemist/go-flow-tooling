@@ -1,4 +1,5 @@
 {
+	"address" : "127.0.0.1:3569", 
 	"accounts": {
 		"service": {
 			"address": "f8d6e0586b0a20c7",
