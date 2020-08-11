@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/client"
 	"github.com/onflow/flow-go-sdk/crypto"
@@ -118,7 +117,7 @@ func (f *FlowConfig) DeployContract(contractName string) {
 		log.Fatalf("Could not read contract file from path=%s", contractPath)
 	}
 	f.apply(contractName, code)
-	log.Printf("Contract: %s successfully deployed", contractName)
+	log.Printf("Contract: %s successfully deployed\n\n", contractName)
 }
 
 // CreateAccount will create an account for running transactions without a contract
@@ -167,23 +166,16 @@ func (f *FlowConfig) apply(contractName string, code []byte) {
 	err = c.SendTransaction(ctx, *tx)
 	handle(err)
 
-	blockTime := 10 * time.Second
-	time.Sleep(blockTime)
-
-	result, err := c.GetTransactionResult(ctx, tx.ID())
-	handle(err)
+	result := WaitForSeal(ctx, c, tx.ID())
+	handle(result.Error)
 
 	var address flow.Address
 
-	if result.Status == flow.TransactionStatusSealed {
-		for _, event := range result.Events {
-			if event.Type == flow.EventAccountCreated {
-				accountCreatedEvent := flow.AccountCreatedEvent(event)
-				address = accountCreatedEvent.Address()
-			}
+	for _, event := range result.Events {
+		if event.Type == flow.EventAccountCreated {
+			accountCreatedEvent := flow.AccountCreatedEvent(event)
+			address = accountCreatedEvent.Address()
 		}
-	} else {
-		spew.Dump(result)
 	}
 
 	hexAddress := address.Hex()
@@ -237,16 +229,11 @@ func (f *FlowConfig) SendTransaction(signerAccountName string, filename string) 
 	if err != nil {
 		log.Fatal("Error sending the transaction.")
 	}
-
-	blockTime := 10 * time.Second
-	time.Sleep(blockTime)
-
-	result, err := c.GetTransactionResult(ctx, tx.ID())
-	if err != nil {
+	result := WaitForSeal(ctx, c, tx.ID())
+	if result.Error != nil {
 		log.Fatalf("There was an error completing transaction: %s", tx.ID())
 	}
-
-	log.Println("Transaction status:", result.Status.String())
+	log.Print("Transaction successfull\n\n")
 }
 
 // RunScript executes a read only script with a given filename on the blockchain
@@ -263,6 +250,7 @@ func (f *FlowConfig) RunScript(filename string) {
 	if err != nil {
 		log.Fatalf("Could not read script file from path=%s", scriptFilePath)
 	}
+	log.Printf("Running script with name %s", filename)
 
 	ctx := context.Background()
 	result, err := c.ExecuteScriptAtLatestBlock(ctx, code, nil)
@@ -270,7 +258,27 @@ func (f *FlowConfig) RunScript(filename string) {
 		log.Fatalf("Error executing script: %s", filename)
 	}
 
-	log.Println("Script result: ", result)
+	log.Printf("Script result: %s\n\n", result)
+}
+
+// WaitForSeal wait fot the process to seal
+func WaitForSeal(ctx context.Context, c *client.Client, id flow.Identifier) *flow.TransactionResult {
+	result, err := c.GetTransactionResult(ctx, id)
+	handle(err)
+
+	fmt.Printf("Waiting for transaction %s to be sealed...", id)
+
+	for result.Status != flow.TransactionStatusSealed {
+		time.Sleep(time.Second)
+		fmt.Print(".")
+		result, err = c.GetTransactionResult(ctx, id)
+		handle(err)
+	}
+
+	fmt.Println()
+	fmt.Printf("Transaction %s sealed\n", id)
+
+	return result
 }
 
 // NewFlowConfigLocalhost will create a flow configuration from local emulator and default files
