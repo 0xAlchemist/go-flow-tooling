@@ -8,6 +8,13 @@ func main() {
 
 	flow := tooling.NewFlowConfigLocalhost()
 
+	// Deploy Contracts
 	flow.DeployContract("nft")
+	flow.DeployContract("ft")
 
+	// Send Transaction
+	// flow.SendTransaction()
+
+	// Run Script
+	// flow.SendScript()
 }
