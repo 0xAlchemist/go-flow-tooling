@@ -192,6 +192,63 @@ func (f *FlowConfig) apply(contractName string, code []byte) {
 	}
 }
 
+// SendTransaction executes a transaction file with a given name and signs it with the provided account
+func (f *FlowConfig) SendTransaction(signerAccountName string, filename string) {
+
+	node := f.Host
+
+	c, err := client.New(node, grpc.WithInsecure())
+	if err != nil {
+		log.Fatal("Could create a new Flow client")
+	}
+
+	ctx := context.Background()
+
+	signerAccount := f.Wallet.Accounts[signerAccountName]
+	account, err := c.GetAccount(ctx, flow.HexToAddress(signerAccount.Address))
+	if err != nil {
+		log.Fatalf("Could not get public account object for address: %s", signerAccount.Address)
+	}
+
+	key := account.Keys[0]
+
+	txFilePath := fmt.Sprintf("./transactions/%s.cdc", filename)
+	code, err := ioutil.ReadFile(txFilePath)
+	if err != nil {
+		log.Fatalf("Could not read transaction file from path=%s", txFilePath)
+	}
+
+	tx := flow.NewTransaction().
+		SetScript(code).
+		SetGasLimit(100).
+		SetProposalKey(account.Address, key.ID, key.SequenceNumber).
+		SetPayer(account.Address).
+		AddAuthorizer(account.Address)
+
+	privateKey, _, _ := accountInfo(&signerAccount)
+	signer := crypto.NewInMemorySigner(privateKey, key.HashAlgo)
+	err = tx.SignEnvelope(account.Address, key.ID, signer)
+	if err != nil {
+		log.Fatal("Error signing the transaction. Transaction was not sent.")
+	}
+
+	log.Printf("Sending transaction: %s with signer %s", txFilePath, signerAccount.Address)
+	err = c.SendTransaction(ctx, *tx)
+	if err != nil {
+		log.Fatal("Error sending the transaction.")
+	}
+
+	blockTime := 10 * time.Second
+	time.Sleep(blockTime)
+
+	result, err := c.GetTransactionResult(ctx, tx.ID())
+	if err != nil {
+		log.Fatalf("There was an error completing transaction: %s", tx.ID())
+	}
+
+	log.Println("Transaction status:", result.Status.String())
+}
+
 // NewFlowConfigLocalhost will create a flow configuration from local emulator and default files
 func NewFlowConfigLocalhost() *FlowConfig {
 	node := "127.0.0.1:3569"
