@@ -24,6 +24,7 @@ type FlowConfig struct {
 	Service *Account
 	Wallet  *Wallet
 	Host    string
+	Gas     uint64
 }
 
 // Account represents a Flow account
@@ -186,8 +187,9 @@ func (f *FlowConfig) apply(contractName string, code []byte) {
 	}
 }
 
+// TODO: Refactor filename and spread of signersAccountName
 // SendTransaction executes a transaction file with a given name and signs it with the provided account
-func (f *FlowConfig) SendTransaction(signerAccountName string, filename string) {
+func (f *FlowConfig) SendTransaction(filename string, signerAccountNames ...string) {
 
 	node := f.Host
 
@@ -198,7 +200,12 @@ func (f *FlowConfig) SendTransaction(signerAccountName string, filename string) 
 
 	ctx := context.Background()
 
+	// TODO: Support multiple signers
+	signerAccountName = signerAccountNames[0]
 	signerAccount := f.Wallet.Accounts[signerAccountName]
+	if signerAccount == nil {
+		log.Fatalf("%v Invalid signerAccountName %s", emoji.PileOfPoo, signerAccountName)
+	}
 	account, err := c.GetAccount(ctx, flow.HexToAddress(signerAccount.Address))
 	if err != nil {
 		log.Fatalf("%v Could not get public account object for address: %s", emoji.PileOfPoo, signerAccount.Address)
@@ -233,7 +240,9 @@ func (f *FlowConfig) SendTransaction(signerAccountName string, filename string) 
 	}
 	result := WaitForSeal(ctx, c, tx.ID())
 	if result.Error != nil {
-		log.Fatalf("%v There was an error completing transaction: %s", emoji.PileOfPoo, tx.ID())
+		// TODO include transaction filename and signers
+		// TODO: inlcude result error in message
+		log.Fatalf("%v There was an error completing transaction: %s error: %v", emoji.PileOfPoo, txFilePath, result.Error)
 	}
 	log.Printf("%v Transaction %s successfull applied with signer %s:%s\n", emoji.OkHand, txFilePath, signerAccountName, signerAccount.Address)
 }
@@ -291,11 +300,11 @@ func NewFlowConfigLocalhost() *FlowConfig {
 		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
 	}
 
-	return createFlowConfig(serviceAccount, host)
+	return createFlowConfig(serviceAccount, host, uint64(1000))
 
 }
 
-func createFlowConfig(serviceAccount *Account, node string) *FlowConfig {
+func createFlowConfig(serviceAccount *Account, node string, gas uint64) *FlowConfig {
 	wallet, err := NewWalletDefault()
 	if err != nil {
 		log.Fatalf("%v copy flow.json to wallet.json and specify new accounts with a given name %v", emoji.PileOfPoo, err)
@@ -305,6 +314,7 @@ func createFlowConfig(serviceAccount *Account, node string) *FlowConfig {
 		Service: serviceAccount,
 		Wallet:  wallet,
 		Host:    node,
+		Gas: gas
 	}
 }
 
@@ -319,5 +329,5 @@ func NewFlowConfigDevNet() *FlowConfig {
 	if err != nil {
 		log.Fatalf("%v Create a file in the location %s with your dev net credentials error:%v", emoji.PileOfPoo, flowConfigFile, err)
 	}
-	return createFlowConfig(serviceAccount, host)
+	return createFlowConfig(serviceAccount, host, uint64(100))
 }
