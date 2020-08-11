@@ -187,7 +187,6 @@ func (f *FlowConfig) apply(contractName string, code []byte) {
 	}
 }
 
-// TODO: Refactor filename and spread of signersAccountName
 // SendTransaction executes a transaction file with a given name and signs it with the provided account
 func (f *FlowConfig) SendTransaction(filename string, signerAccountNames ...string) {
 
@@ -201,9 +200,9 @@ func (f *FlowConfig) SendTransaction(filename string, signerAccountNames ...stri
 	ctx := context.Background()
 
 	// TODO: Support multiple signers
-	signerAccountName = signerAccountNames[0]
+	signerAccountName := signerAccountNames[0]
 	signerAccount := f.Wallet.Accounts[signerAccountName]
-	if signerAccount == nil {
+	if signerAccount.Address == "" {
 		log.Fatalf("%v Invalid signerAccountName %s", emoji.PileOfPoo, signerAccountName)
 	}
 	account, err := c.GetAccount(ctx, flow.HexToAddress(signerAccount.Address))
@@ -233,15 +232,12 @@ func (f *FlowConfig) SendTransaction(filename string, signerAccountNames ...stri
 		log.Fatalf("%v Error signing the transaction. Transaction was not sent.", emoji.PileOfPoo)
 	}
 
-	//log.Printf("%v Sending transaction: %s with signer %s", emoji.Handshake, txFilePath, signerAccount.Address)
 	err = c.SendTransaction(ctx, *tx)
 	if err != nil {
 		log.Fatalf("%v Error sending the transaction.", emoji.PileOfPoo)
 	}
 	result := WaitForSeal(ctx, c, tx.ID())
 	if result.Error != nil {
-		// TODO include transaction filename and signers
-		// TODO: inlcude result error in message
 		log.Fatalf("%v There was an error completing transaction: %s error: %v", emoji.PileOfPoo, txFilePath, result.Error)
 	}
 	log.Printf("%v Transaction %s successfull applied with signer %s:%s\n", emoji.OkHand, txFilePath, signerAccountName, signerAccount.Address)
@@ -261,7 +257,6 @@ func (f *FlowConfig) RunScript(filename string) {
 	if err != nil {
 		log.Fatalf("%v Could not read script file from path=%s", emoji.PileOfPoo, scriptFilePath)
 	}
-	//log.Printf("%v Running script with name %s", emoji.Star, filename)
 
 	ctx := context.Background()
 	result, err := c.ExecuteScriptAtLatestBlock(ctx, code, nil)
@@ -314,7 +309,7 @@ func createFlowConfig(serviceAccount *Account, node string, gas uint64) *FlowCon
 		Service: serviceAccount,
 		Wallet:  wallet,
 		Host:    node,
-		Gas: gas
+		Gas:     gas,
 	}
 }
 
