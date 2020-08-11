@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/enescakir/emoji"
 	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/client"
 	"github.com/onflow/flow-go-sdk/crypto"
@@ -233,7 +234,7 @@ func (f *FlowConfig) SendTransaction(signerAccountName string, filename string) 
 	if result.Error != nil {
 		log.Fatalf("There was an error completing transaction: %s", tx.ID())
 	}
-	log.Print("Transaction successfull\n\n")
+	log.Printf("%v Transaction successfull applied.\n\n", emoji.OkHand.Tone(emoji.Light))
 }
 
 // RunScript executes a read only script with a given filename on the blockchain
@@ -266,7 +267,7 @@ func WaitForSeal(ctx context.Context, c *client.Client, id flow.Identifier) *flo
 	result, err := c.GetTransactionResult(ctx, id)
 	handle(err)
 
-	fmt.Printf("Waiting for transaction %s to be sealed...", id)
+	log.Printf("Waiting for transaction %s to be sealed...", id)
 
 	for result.Status != flow.TransactionStatusSealed {
 		time.Sleep(time.Second)
@@ -275,8 +276,7 @@ func WaitForSeal(ctx context.Context, c *client.Client, id flow.Identifier) *flo
 		handle(err)
 	}
 
-	fmt.Println()
-	fmt.Printf("Transaction %s sealed\n", id)
+	log.Printf("Transaction %s sealed\n", id)
 
 	return result
 }
