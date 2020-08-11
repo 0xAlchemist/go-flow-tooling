@@ -111,13 +111,14 @@ func accountInfo(account *Account) (crypto.PrivateKey, crypto.SignatureAlgorithm
 
 // DeployContract will deploy a contract with the given name to an account with the same name from wallet.json
 func (f *FlowConfig) DeployContract(contractName string) {
-
 	contractPath := fmt.Sprintf("./contracts/%s.cdc", contractName)
+	log.Printf("Deploying contract: %s at %s", contractName, contractPath)
 	code, err := ioutil.ReadFile(contractPath)
 	if err != nil {
 		log.Fatalf("Could not read contract file from path=%s", contractPath)
 	}
 	f.apply(contractName, code)
+	log.Printf("Contract: %s successfully deployed", contractName)
 }
 
 // CreateAccount will create an account for running transactions without a contract
