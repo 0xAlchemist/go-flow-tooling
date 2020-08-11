@@ -161,7 +161,7 @@ func (f *FlowConfig) apply(contractName string, code []byte) {
 	tx := templates.CreateAccount([]*flow.AccountKey{accountKey}, code, serviceAddress)
 	tx.SetProposalKey(serviceAddress, serviceAccountKey.ID, serviceAccountKey.SequenceNumber)
 	tx.SetPayer(serviceAddress)
-	tx.SetGasLimit(uint64(100))
+	tx.SetGasLimit(f.Gas)
 
 	err = tx.SignEnvelope(serviceAddress, serviceAccountKey.ID, serviceSigner)
 	handle(err)
@@ -220,7 +220,7 @@ func (f *FlowConfig) SendTransaction(filename string, signerAccountNames ...stri
 
 	tx := flow.NewTransaction().
 		SetScript(code).
-		SetGasLimit(100).
+		SetGasLimit(f.Gas).
 		SetProposalKey(account.Address, key.ID, key.SequenceNumber).
 		SetPayer(account.Address).
 		AddAuthorizer(account.Address)
