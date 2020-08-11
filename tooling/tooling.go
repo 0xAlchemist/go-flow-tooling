@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/enescakir/emoji"
+	"github.com/mitchellh/go-homedir"
 	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/client"
 	"github.com/onflow/flow-go-sdk/crypto"
@@ -284,15 +285,20 @@ func WaitForSeal(ctx context.Context, c *client.Client, id flow.Identifier) *flo
 
 // NewFlowConfigLocalhost will create a flow configuration from local emulator and default files
 func NewFlowConfigLocalhost() *FlowConfig {
-	node := "127.0.0.1:3569"
-	serviceAccount, err := NewFlowAccountDefault()
+	host := "127.0.0.1:3569"
+	serviceAccount, err := NewFlowAccount("./flow.json")
 	if err != nil {
 		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
 	}
 
+	return createFlowConfig(serviceAccount, host)
+
+}
+
+func createFlowConfig(serviceAccount *Account, node string) *FlowConfig {
 	wallet, err := NewWalletDefault()
 	if err != nil {
-		log.Fatal(err, fmt.Sprintf("%v copy flow.json to wallet.json and specify new accounts with a given name", emoji.PileOfPoo))
+		log.Fatalf("%v copy flow.json to wallet.json and specify new accounts with a given name %v", emoji.PileOfPoo, err)
 	}
 
 	return &FlowConfig{
@@ -300,5 +306,18 @@ func NewFlowConfigLocalhost() *FlowConfig {
 		Wallet:  wallet,
 		Host:    node,
 	}
+}
 
+// NewFlowConfigDevNet setup devnot like in https://www.notion.so/Accessing-Flow-Devnet-ad35623797de48c08d8b88102ea38131
+func NewFlowConfigDevNet() *FlowConfig {
+	host := "access-001.devnet7.nodes.onflow.org:9000"
+	flowConfigFile, err := homedir.Expand("~/.flow-dev.json")
+	if err != nil {
+		log.Fatalf("%v error %v", emoji.PileOfPoo, err)
+	}
+	serviceAccount, err := NewFlowAccount(flowConfigFile)
+	if err != nil {
+		log.Fatalf("%v Create a file in the location %s with your dev net credentials error:%v", emoji.PileOfPoo, flowConfigFile, err)
+	}
+	return createFlowConfig(serviceAccount, host)
 }

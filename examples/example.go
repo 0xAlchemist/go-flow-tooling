@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/0xalchemist/go-flow-tooling/tooling"
+	"github.com/0xAlchemist/go-flow-tooling/tooling"
 )
 
 func main() {
