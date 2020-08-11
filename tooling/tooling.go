@@ -261,11 +261,10 @@ func (f *FlowConfig) RunScript(filename string) {
 	ctx := context.Background()
 	result, err := c.ExecuteScriptAtLatestBlock(ctx, code, nil)
 	if err != nil {
-		log.Fatalf("%v Error executing script: %s", emoji.PileOfPoo, filename)
-
+		log.Fatalf("%v Error executing script: %s output %v", emoji.PileOfPoo, filename, err)
 	}
 
-	log.Printf("%v Script run from path %s result: %s\n", emoji.Star, scriptFilePath, result)
+	log.Printf("%v Script run from path %s result: %v\n", emoji.Star, scriptFilePath, result)
 }
 
 // WaitForSeal wait fot the process to seal
