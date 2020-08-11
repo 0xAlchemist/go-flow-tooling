@@ -243,7 +243,7 @@ func (f *FlowConfig) RunScript(filename string) {
 
 	c, err := client.New(node, grpc.WithInsecure())
 	if err != nil {
-		log.Fatal("%v Error creating flow client", emoji.PileOfPoo)
+		log.Fatalf("%v Error creating flow client", emoji.PileOfPoo)
 	}
 
 	scriptFilePath := fmt.Sprintf("./scripts/%s.cdc", filename)
