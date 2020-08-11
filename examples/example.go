@@ -13,8 +13,8 @@ func main() {
 	flow.DeployContract("ft")
 
 	// Send Transaction
-	flow.SendTransaction("nft", "test")
+	flow.SendTransaction("ft", "create_nft_collection")
 
 	// Run Script
-	// flow.SendScript()
+	flow.RunScript("test")
 }

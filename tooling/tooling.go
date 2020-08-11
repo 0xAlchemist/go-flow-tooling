@@ -249,6 +249,30 @@ func (f *FlowConfig) SendTransaction(signerAccountName string, filename string) 
 	log.Println("Transaction status:", result.Status.String())
 }
 
+// RunScript executes a read only script with a given filename on the blockchain
+func (f *FlowConfig) RunScript(filename string) {
+	node := f.Host
+
+	c, err := client.New(node, grpc.WithInsecure())
+	if err != nil {
+		log.Fatal("Error creating flow client")
+	}
+
+	scriptFilePath := fmt.Sprintf("./scripts/%s.cdc", filename)
+	code, err := ioutil.ReadFile(scriptFilePath)
+	if err != nil {
+		log.Fatalf("Could not read script file from path=%s", scriptFilePath)
+	}
+
+	ctx := context.Background()
+	result, err := c.ExecuteScriptAtLatestBlock(ctx, code, nil)
+	if err != nil {
+		log.Fatalf("Error executing script: %s", filename)
+	}
+
+	log.Println("Script result: ", result)
+}
+
 // NewFlowConfigLocalhost will create a flow configuration from local emulator and default files
 func NewFlowConfigLocalhost() *FlowConfig {
 	node := "127.0.0.1:3569"
