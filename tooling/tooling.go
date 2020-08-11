@@ -112,13 +112,13 @@ func accountInfo(account *Account) (crypto.PrivateKey, crypto.SignatureAlgorithm
 // DeployContract will deploy a contract with the given name to an account with the same name from wallet.json
 func (f *FlowConfig) DeployContract(contractName string) {
 	contractPath := fmt.Sprintf("./contracts/%s.cdc", contractName)
-	log.Printf("Deploying contract: %s at %s", contractName, contractPath)
+	//log.Printf("Deploying contract: %s at %s", contractName, contractPath)
 	code, err := ioutil.ReadFile(contractPath)
 	if err != nil {
-		log.Fatalf("Could not read contract file from path=%s", contractPath)
+		log.Fatalf("%v Could not read contract file from path=%s", emoji.PileOfPoo, contractPath)
 	}
 	f.apply(contractName, code)
-	log.Printf("Contract: %s successfully deployed\n\n", contractName)
+	log.Printf("%v Contract: %s successfully deployed\n", emoji.Scroll, contractName)
 }
 
 // CreateAccount will create an account for running transactions without a contract
@@ -181,7 +181,7 @@ func (f *FlowConfig) apply(contractName string, code []byte) {
 
 	hexAddress := address.Hex()
 	if hexAddress != user.Address {
-		log.Fatalf("The address in the walletName=%s wallet=%s is not the same as the one generated=%s", contractName, user.Address, hexAddress)
+		log.Fatalf("%v The address in the walletName=%s wallet=%s is not the same as the one generated=%s", emoji.PileOfPoo, contractName, user.Address, hexAddress)
 	}
 }
 
@@ -192,7 +192,7 @@ func (f *FlowConfig) SendTransaction(signerAccountName string, filename string) 
 
 	c, err := client.New(node, grpc.WithInsecure())
 	if err != nil {
-		log.Fatal("Could create a new Flow client")
+		log.Fatalf("%v Could create a new Flow client", emoji.PileOfPoo)
 	}
 
 	ctx := context.Background()
@@ -200,7 +200,7 @@ func (f *FlowConfig) SendTransaction(signerAccountName string, filename string) 
 	signerAccount := f.Wallet.Accounts[signerAccountName]
 	account, err := c.GetAccount(ctx, flow.HexToAddress(signerAccount.Address))
 	if err != nil {
-		log.Fatalf("Could not get public account object for address: %s", signerAccount.Address)
+		log.Fatalf("%v Could not get public account object for address: %s", emoji.PileOfPoo, signerAccount.Address)
 	}
 
 	key := account.Keys[0]
@@ -208,7 +208,7 @@ func (f *FlowConfig) SendTransaction(signerAccountName string, filename string) 
 	txFilePath := fmt.Sprintf("./transactions/%s.cdc", filename)
 	code, err := ioutil.ReadFile(txFilePath)
 	if err != nil {
-		log.Fatalf("Could not read transaction file from path=%s", txFilePath)
+		log.Fatalf("%v Could not read transaction file from path=%s", emoji.PileOfPoo, txFilePath)
 	}
 
 	tx := flow.NewTransaction().
@@ -222,19 +222,19 @@ func (f *FlowConfig) SendTransaction(signerAccountName string, filename string) 
 	signer := crypto.NewInMemorySigner(privateKey, key.HashAlgo)
 	err = tx.SignEnvelope(account.Address, key.ID, signer)
 	if err != nil {
-		log.Fatal("Error signing the transaction. Transaction was not sent.")
+		log.Fatalf("%v Error signing the transaction. Transaction was not sent.", emoji.PileOfPoo)
 	}
 
-	log.Printf("Sending transaction: %s with signer %s", txFilePath, signerAccount.Address)
+	//log.Printf("%v Sending transaction: %s with signer %s", emoji.Handshake, txFilePath, signerAccount.Address)
 	err = c.SendTransaction(ctx, *tx)
 	if err != nil {
-		log.Fatal("Error sending the transaction.")
+		log.Fatalf("%v Error sending the transaction.", emoji.PileOfPoo)
 	}
 	result := WaitForSeal(ctx, c, tx.ID())
 	if result.Error != nil {
-		log.Fatalf("There was an error completing transaction: %s", tx.ID())
+		log.Fatalf("%v There was an error completing transaction: %s", emoji.PileOfPoo, tx.ID())
 	}
-	log.Printf("%v Transaction successfull applied.\n\n", emoji.OkHand.Tone(emoji.Light))
+	log.Printf("%v Transaction %s successfull applied with signer %s:%s\n", emoji.OkHand, txFilePath, signerAccountName, signerAccount.Address)
 }
 
 // RunScript executes a read only script with a given filename on the blockchain
@@ -243,23 +243,24 @@ func (f *FlowConfig) RunScript(filename string) {
 
 	c, err := client.New(node, grpc.WithInsecure())
 	if err != nil {
-		log.Fatal("Error creating flow client")
+		log.Fatal("%v Error creating flow client", emoji.PileOfPoo)
 	}
 
 	scriptFilePath := fmt.Sprintf("./scripts/%s.cdc", filename)
 	code, err := ioutil.ReadFile(scriptFilePath)
 	if err != nil {
-		log.Fatalf("Could not read script file from path=%s", scriptFilePath)
+		log.Fatalf("%v Could not read script file from path=%s", emoji.PileOfPoo, scriptFilePath)
 	}
-	log.Printf("Running script with name %s", filename)
+	//log.Printf("%v Running script with name %s", emoji.Star, filename)
 
 	ctx := context.Background()
 	result, err := c.ExecuteScriptAtLatestBlock(ctx, code, nil)
 	if err != nil {
-		log.Fatalf("Error executing script: %s", filename)
+		log.Fatalf("%v Error executing script: %s", emoji.PileOfPoo, filename)
+
 	}
 
-	log.Printf("Script result: %s\n\n", result)
+	log.Printf("%v Script run from path %s result: %s\n", emoji.Star, scriptFilePath, result)
 }
 
 // WaitForSeal wait fot the process to seal
@@ -267,16 +268,16 @@ func WaitForSeal(ctx context.Context, c *client.Client, id flow.Identifier) *flo
 	result, err := c.GetTransactionResult(ctx, id)
 	handle(err)
 
-	log.Printf("Waiting for transaction %s to be sealed...", id)
+	//log.Printf("Waiting for transaction %s to be sealed...", id)
 
 	for result.Status != flow.TransactionStatusSealed {
 		time.Sleep(time.Second)
-		fmt.Print(".")
+		//fmt.Print(".")
 		result, err = c.GetTransactionResult(ctx, id)
 		handle(err)
 	}
 
-	log.Printf("Transaction %s sealed\n", id)
+	//log.Printf("Transaction %s sealed\n", id)
 
 	return result
 }
@@ -286,12 +287,12 @@ func NewFlowConfigLocalhost() *FlowConfig {
 	node := "127.0.0.1:3569"
 	serviceAccount, err := NewFlowAccountDefault()
 	if err != nil {
-		log.Fatalf("run 'flow emulator init' errorMessage=%v", err)
+		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
 	}
 
 	wallet, err := NewWalletDefault()
 	if err != nil {
-		log.Fatal(err, "copy flow.json to wallet.json and specify new accounts with a given name")
+		log.Fatal(err, fmt.Sprintf("%v copy flow.json to wallet.json and specify new accounts with a given name", emoji.PileOfPoo))
 	}
 
 	return &FlowConfig{
