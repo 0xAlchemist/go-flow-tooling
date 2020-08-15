@@ -2,6 +2,7 @@ package tooling
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -127,6 +128,17 @@ func (f *FlowConfig) DeployContract(contractName string) {
 // CreateAccount will create an account for running transactions without a contract
 func (f *FlowConfig) CreateAccount(accountName string) {
 	f.apply(accountName, nil)
+}
+
+//FindAddress finds an candence.Address value from a given key in your wallet
+func (f *FlowConfig) FindAddress(key string) cadence.Address {
+	address := f.Wallet.Accounts[key].Address
+
+	byteAddress, err := hex.DecodeString(address)
+	if err != nil {
+		panic(err)
+	}
+	return cadence.BytesToAddress(byteAddress)
 }
 
 func (f *FlowConfig) apply(contractName string, code []byte) {
