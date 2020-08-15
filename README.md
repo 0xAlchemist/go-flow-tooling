@@ -10,3 +10,5 @@ go-flow-tooling
  - `cd keyinfo`
  - go install
  - ./keyinfo <accountKey>
+
+ Or you could just run it with `go run main.go <account>`

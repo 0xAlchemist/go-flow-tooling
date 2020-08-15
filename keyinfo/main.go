@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -14,18 +15,30 @@ import (
 )
 
 func main() {
-	argsWithoutProg := os.Args[1:]
 
-	//host := "access-001.devnet7.nodes.onflow.org:9000"
+	//this proabaly does not work yet
+	devPointer := flag.Bool("dev", false, "Set to enable devnet")
+
+	flag.Parse()
 	host := "127.0.0.1:3569"
+	if *devPointer {
+		host = "access-001.devnet7.nodes.onflow.org:9000"
+	}
 
 	c, err := client.New(host, grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("%v Could create a new Flow client", emoji.PileOfPoo)
 	}
 
+	args := flag.Args()
+
+	if len(args) != 1 {
+		log.Fatalf("%v This command takes a single argument that is an flow account address without 0x prefix", emoji.PileOfPoo)
+	}
+
 	ctx := context.Background()
-	signerAccount := argsWithoutProg[0]
+
+	signerAccount := flag.Args()[0]
 	account, err := c.GetAccount(ctx, flow.HexToAddress(signerAccount))
 	if err != nil {
 		log.Fatalf("%v Could not get public account object for address: %s", emoji.PileOfPoo, signerAccount)
