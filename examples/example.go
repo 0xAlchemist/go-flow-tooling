@@ -18,10 +18,7 @@ func main() {
 	// Send Transaction
 	flow.SendTransaction("create_nft_collection", "ft")
 
-	// Send Transaction supports multiple singers, they will all be AuthAccounts
-	// TODO This does not work?
-	//flow.SendTransaction("signWithMultipleAccounts", "ft", "nft")
-
+	//send transaction with a string argument
 	flow.SendTransactionWithArguments("arguments", "ft", cadence.String("argument1"))
 
 	//create an argument that is a cadence.Address from the wallet.json file
