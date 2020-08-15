@@ -11,6 +11,7 @@ import (
 
 	"github.com/enescakir/emoji"
 	"github.com/mitchellh/go-homedir"
+	"github.com/onflow/cadence"
 	"github.com/onflow/flow-go-sdk"
 	"github.com/onflow/flow-go-sdk/client"
 	"github.com/onflow/flow-go-sdk/crypto"
@@ -187,8 +188,30 @@ func (f *FlowConfig) apply(contractName string, code []byte) {
 	}
 }
 
+// SendTransactionWithArguments executes a transaction file with a given name and signs it with the provided account and send in the provided arguments
+func (f *FlowConfig) SendTransactionWithArguments(filename string, signer string, arguments ...cadence.Value) {
+
+	f.sendTransactionRaw(filename, []string{signer}, arguments)
+}
+
+// SendTransactionWithMultipleSignersAndArguments executes a transaction file with a given name and signs it with the provided accounts and sends in the provided arguments
+func (f *FlowConfig) SendTransactionWithMultipleSignersAndArguments(filename string, signers []string, arguments ...cadence.Value) {
+
+	f.sendTransactionRaw(filename, signers, arguments)
+}
+
 // SendTransaction executes a transaction file with a given name and signs it with the provided account
 func (f *FlowConfig) SendTransaction(filename string, signerAccountNames ...string) {
+
+	f.sendTransactionRaw(filename, signerAccountNames, []cadence.Value{})
+}
+
+// SendTransaction executes a transaction file with a given name and signs it with the provided account
+func (f *FlowConfig) sendTransactionRaw(filename string, signers []string, arguments []cadence.Value) {
+
+	if len(signers) == 0 {
+		log.Fatalf("Need atleast one signer to sign")
+	}
 
 	node := f.Host
 
@@ -200,7 +223,7 @@ func (f *FlowConfig) SendTransaction(filename string, signerAccountNames ...stri
 	ctx := context.Background()
 
 	// TODO: Support multiple signers
-	signerAccountName := signerAccountNames[0]
+	signerAccountName := signers[0]
 	signerAccount := f.Wallet.Accounts[signerAccountName]
 	if signerAccount.Address == "" {
 		log.Fatalf("%v Invalid signerAccountName %s", emoji.PileOfPoo, signerAccountName)
@@ -225,13 +248,30 @@ func (f *FlowConfig) SendTransaction(filename string, signerAccountNames ...stri
 		SetPayer(account.Address).
 		AddAuthorizer(account.Address)
 
-	privateKey, _, _ := accountInfo(&signerAccount)
-	signer := crypto.NewInMemorySigner(privateKey, key.HashAlgo)
-	err = tx.SignEnvelope(account.Address, key.ID, signer)
-	if err != nil {
-		log.Fatalf("%v Error signing the transaction. Transaction was not sent.", emoji.PileOfPoo)
+	for _, argument := range arguments {
+		tx.AddArgument(argument)
 	}
 
+	//TODO: Refactor
+	for _, signerName := range signers {
+		envelopeAccount := f.Wallet.Accounts[signerAccountName]
+		if envelopeAccount.Address == "" {
+			log.Fatalf("%v Invalid signerAccountName %s", emoji.PileOfPoo, signerName)
+		}
+
+		account, err := c.GetAccount(ctx, flow.HexToAddress(envelopeAccount.Address))
+		key := account.Keys[0]
+		if err != nil {
+			log.Fatalf("%v Could not get public account object for address: %s", emoji.PileOfPoo, account.Address)
+		}
+
+		privateKey, _, _ := accountInfo(&envelopeAccount)
+		signer := crypto.NewInMemorySigner(privateKey, key.HashAlgo)
+		err = tx.SignEnvelope(account.Address, key.ID, signer)
+		if err != nil {
+			log.Fatalf("%v Error signing the transaction. Transaction was not sent.", emoji.PileOfPoo)
+		}
+	}
 	err = c.SendTransaction(ctx, *tx)
 	if err != nil {
 		log.Fatalf("%v Error sending the transaction.", emoji.PileOfPoo)
@@ -244,7 +284,7 @@ func (f *FlowConfig) SendTransaction(filename string, signerAccountNames ...stri
 }
 
 // RunScript executes a read only script with a given filename on the blockchain
-func (f *FlowConfig) RunScript(filename string) {
+func (f *FlowConfig) RunScript(filename string, arguments ...cadence.Value) {
 	node := f.Host
 
 	c, err := client.New(node, grpc.WithInsecure())
@@ -259,7 +299,7 @@ func (f *FlowConfig) RunScript(filename string) {
 	}
 
 	ctx := context.Background()
-	result, err := c.ExecuteScriptAtLatestBlock(ctx, code, nil)
+	result, err := c.ExecuteScriptAtLatestBlock(ctx, code, arguments)
 	if err != nil {
 		log.Fatalf("%v Error executing script: %s output %v", emoji.PileOfPoo, filename, err)
 	}

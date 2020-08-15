@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/0xAlchemist/go-flow-tooling/tooling"
+	"github.com/onflow/cadence"
 )
 
 func main() {
@@ -13,8 +14,15 @@ func main() {
 	flow.DeployContract("ft")
 
 	// Send Transaction
-	flow.SendTransaction("ft", "create_nft_collection")
+	flow.SendTransaction("create_nft_collection", "ft")
+
+	// Send Transaction supports multiple singers, they will all be AuthAccounts
+
+	// TODO This does not work?
+	//flow.SendTransaction("signWithMultipleAccounts", "ft", "nft")
+
+	flow.SendTransactionWithArguments("arguments", "ft", cadence.String("argument1"))
 
 	// Run Script
-	flow.RunScript("test")
+	flow.RunScript("test", cadence.String("argument1"))
 }
