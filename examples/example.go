@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/0xAlchemist/go-flow-tooling/tooling"
+	"github.com/versus-flow/go-flow-tooling/tooling"
 	"github.com/onflow/cadence"
 )
 
