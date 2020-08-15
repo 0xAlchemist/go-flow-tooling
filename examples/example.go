@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/0xAlchemist/go-flow-tooling/tooling"
 	"github.com/onflow/cadence"
 )
@@ -27,4 +29,7 @@ func main() {
 
 	// Run Script
 	flow.RunScript("test", cadence.String("argument1"))
+
+	result := flow.RunScriptReturns("test", cadence.String("argument1"))
+	log.Printf("Script returned %s", result)
 }

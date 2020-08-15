@@ -297,6 +297,11 @@ func (f *FlowConfig) sendTransactionRaw(filename string, signers []string, argum
 
 // RunScript executes a read only script with a given filename on the blockchain
 func (f *FlowConfig) RunScript(filename string, arguments ...cadence.Value) {
+	_ = f.RunScriptReturns(filename, arguments...)
+}
+
+// RunScriptReturns executes a read only script with a given filename on the blockchain
+func (f *FlowConfig) RunScriptReturns(filename string, arguments ...cadence.Value) cadence.Value {
 	node := f.Host
 
 	c, err := client.New(node, grpc.WithInsecure())
@@ -317,6 +322,7 @@ func (f *FlowConfig) RunScript(filename string, arguments ...cadence.Value) {
 	}
 
 	log.Printf("%v Script run from path %s result: %v\n", emoji.Star, scriptFilePath, result)
+	return result
 }
 
 // WaitForSeal wait fot the process to seal
