@@ -218,6 +218,27 @@ func (f *FlowConfig) SendTransaction(filename string, signerAccountNames ...stri
 	f.sendTransactionRaw(filename, signerAccountNames, []cadence.Value{})
 }
 
+//GetAccount gets the account
+func (f *FlowConfig) GetAccount(name string) *flow.Account {
+	node := f.Host
+
+	c, err := client.New(node, grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("%v Could create a new Flow client", emoji.PileOfPoo)
+	}
+
+	ctx := context.Background()
+	signerAccount := f.Wallet.Accounts[name]
+	if signerAccount.Address == "" {
+		log.Fatalf("%v Invalid name %s", emoji.PileOfPoo, name)
+	}
+	account, err := c.GetAccount(ctx, flow.HexToAddress(signerAccount.Address))
+	if err != nil {
+		log.Fatalf("%v Could not get public account object for address: %s", emoji.PileOfPoo, signerAccount.Address)
+	}
+	return account
+}
+
 // SendTransaction executes a transaction file with a given name and signs it with the provided account
 func (f *FlowConfig) sendTransactionRaw(filename string, signers []string, arguments []cadence.Value) {
 
