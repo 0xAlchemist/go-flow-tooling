@@ -1,4 +1,4 @@
-module github.com/0xAlchemist/go-flow-tooling
+module github.com/versus-flow/go-flow-tooling
 
 go 1.14
 
