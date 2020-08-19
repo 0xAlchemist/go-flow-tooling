@@ -365,6 +365,18 @@ func WaitForSeal(ctx context.Context, c *client.Client, id flow.Identifier) *flo
 	return result
 }
 
+// NewFlowConfigLocalhostWithGas will create a flow configuration from local emulator and default files
+func NewFlowConfigLocalhostWithGas(gas int) *FlowConfig {
+	host := "127.0.0.1:3569"
+	serviceAccount, err := NewFlowAccount("./flow.json")
+	if err != nil {
+		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
+	}
+
+	return createFlowConfig(serviceAccount, host, uint64(gas))
+
+}
+
 // NewFlowConfigLocalhost will create a flow configuration from local emulator and default files
 func NewFlowConfigLocalhost() *FlowConfig {
 	host := "127.0.0.1:3569"
