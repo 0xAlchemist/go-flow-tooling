@@ -7,9 +7,7 @@ import (
 func main() {
 
 	flow := tooling.NewFlowConfigDevNet()
-	flow.RunScriptReturns("block")
 
-	/*
 		// Deploy Contracts
 		/flow.DeployContract("nft")
 		flow.DeployContract("ft")
@@ -28,5 +26,4 @@ func main() {
 
 		result := flow.RunScriptReturns("test", flow.FindAddress("nft"))
 		log.Printf("Script returned %s", result)
-	*/
 }

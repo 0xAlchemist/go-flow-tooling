@@ -23,10 +23,11 @@ import (
 
 // FlowConfig holds all information to work on flow with a given set of accounts in a wallet
 type FlowConfig struct {
-	Service *Account
-	Wallet  *Wallet
-	Host    string
-	Gas     uint64
+	Service    *Account
+	Wallet     *Wallet
+	Host       string
+	Gas        uint64
+	ParentPath string
 }
 
 // Account represents a Flow account
@@ -80,8 +81,8 @@ func NewFlowAccount(path string) (*Account, error) {
 }
 
 // NewWalletDefault will create a default wallet
-func NewWalletDefault() (*Wallet, error) {
-	return NewWallet("./wallet.json")
+func NewWalletDefault(path string) (*Wallet, error) {
+	return NewWallet(fmt.Sprintf("%s/wallet.json", path))
 }
 
 // NewWallet will creat a wallet from the given path
@@ -115,7 +116,7 @@ func accountInfo(account *Account) (crypto.PrivateKey, crypto.SignatureAlgorithm
 
 // DeployContract will deploy a contract with the given name to an account with the same name from wallet.json
 func (f *FlowConfig) DeployContract(contractName string) {
-	contractPath := fmt.Sprintf("./contracts/%s.cdc", contractName)
+	contractPath := fmt.Sprintf("%s/contracts/%s.cdc", f.ParentPath, contractName)
 	//log.Printf("Deploying contract: %s at %s", contractName, contractPath)
 	code, err := ioutil.ReadFile(contractPath)
 	if err != nil {
@@ -268,7 +269,7 @@ func (f *FlowConfig) sendTransactionRaw(filename string, signers []string, argum
 
 	key := account.Keys[0]
 
-	txFilePath := fmt.Sprintf("./transactions/%s.cdc", filename)
+	txFilePath := fmt.Sprintf("%s/transactions/%s.cdc", f.ParentPath, filename)
 	code, err := ioutil.ReadFile(txFilePath)
 	if err != nil {
 		log.Fatalf("%v Could not read transaction file from path=%s", emoji.PileOfPoo, txFilePath)
@@ -330,7 +331,7 @@ func (f *FlowConfig) RunScriptReturns(filename string, arguments ...cadence.Valu
 		log.Fatalf("%v Error creating flow client", emoji.PileOfPoo)
 	}
 
-	scriptFilePath := fmt.Sprintf("./scripts/%s.cdc", filename)
+	scriptFilePath := fmt.Sprintf("%s/scripts/%s.cdc", f.ParentPath, filename)
 	code, err := ioutil.ReadFile(scriptFilePath)
 	if err != nil {
 		log.Fatalf("%v Could not read script file from path=%s", emoji.PileOfPoo, scriptFilePath)
@@ -373,7 +374,19 @@ func NewFlowConfigLocalhostWithGas(gas int) *FlowConfig {
 		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
 	}
 
-	return createFlowConfig(serviceAccount, host, uint64(gas))
+	return createFlowConfig(serviceAccount, host, uint64(gas), ".")
+
+}
+
+// NewFlowConfigLocalhostWithParentPath will create a flow configuration from local emulator and default files from a subdir
+func NewFlowConfigLocalhostWithParentPath(path string) *FlowConfig {
+	host := "127.0.0.1:3569"
+	serviceAccount, err := NewFlowAccount(fmt.Sprintf("%s/flow.json", path))
+	if err != nil {
+		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
+	}
+
+	return createFlowConfig(serviceAccount, host, uint64(10000), path)
 
 }
 
@@ -385,21 +398,22 @@ func NewFlowConfigLocalhost() *FlowConfig {
 		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
 	}
 
-	return createFlowConfig(serviceAccount, host, uint64(1000))
+	return createFlowConfig(serviceAccount, host, uint64(10000), ".")
 
 }
 
-func createFlowConfig(serviceAccount *Account, node string, gas uint64) *FlowConfig {
-	wallet, err := NewWalletDefault()
+func createFlowConfig(serviceAccount *Account, node string, gas uint64, path string) *FlowConfig {
+	wallet, err := NewWalletDefault(path)
 	if err != nil {
 		log.Fatalf("%v copy flow.json to wallet.json and specify new accounts with a given name %v", emoji.PileOfPoo, err)
 	}
 
 	return &FlowConfig{
-		Service: serviceAccount,
-		Wallet:  wallet,
-		Host:    node,
-		Gas:     gas,
+		Service:    serviceAccount,
+		Wallet:     wallet,
+		Host:       node,
+		Gas:        gas,
+		ParentPath: path,
 	}
 }
 
@@ -415,5 +429,5 @@ func NewFlowConfigDevNet() *FlowConfig {
 	if err != nil {
 		log.Fatalf("%v Create a file in the location %s with your dev net credentials error:%v", emoji.PileOfPoo, flowConfigFile, err)
 	}
-	return createFlowConfig(serviceAccount, host, uint64(100))
+	return createFlowConfig(serviceAccount, host, uint64(10000), ".")
 }
