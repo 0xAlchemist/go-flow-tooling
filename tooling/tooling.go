@@ -391,7 +391,7 @@ func NewFlowConfigLocalhostWithParentPath(path string) *FlowConfig {
 		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
 	}
 
-	return createFlowConfig(serviceAccount, host, uint64(10000), path)
+	return createFlowConfig(serviceAccount, host, uint64(9999), path)
 
 }
 
@@ -403,7 +403,7 @@ func NewFlowConfigLocalhost() *FlowConfig {
 		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
 	}
 
-	return createFlowConfig(serviceAccount, host, uint64(10000), ".")
+	return createFlowConfig(serviceAccount, host, uint64(9999), ".")
 
 }
 
@@ -434,5 +434,5 @@ func NewFlowConfigDevNet() *FlowConfig {
 	if err != nil {
 		log.Fatalf("%v Create a file in the location %s with your dev net credentials error:%v", emoji.PileOfPoo, flowConfigFile, err)
 	}
-	return createFlowConfig(serviceAccount, host, uint64(10000), ".")
+	return createFlowConfig(serviceAccount, host, uint64(9999), ".")
 }
