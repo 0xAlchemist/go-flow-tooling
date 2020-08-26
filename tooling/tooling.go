@@ -419,7 +419,7 @@ func createFlowConfig(serviceAccount *Account, node string, gas uint64, path str
 
 // NewFlowConfigDevNet setup devnot like in https://www.notion.so/Accessing-Flow-Devnet-ad35623797de48c08d8b88102ea38131
 func NewFlowConfigDevNet() *FlowConfig {
-	host := "access-001.devnet11.nodes.onflow.org:9000"
+	host := "access-001.devnet12.nodes.onflow.org:9000"
 
 	flowConfigFile, err := homedir.Expand("~/.flow-dev.json")
 	if err != nil {
