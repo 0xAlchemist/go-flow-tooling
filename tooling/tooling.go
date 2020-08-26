@@ -177,6 +177,11 @@ func (f *FlowConfig) apply(contractName string, code []byte) {
 	tx.SetPayer(serviceAddress)
 	tx.SetGasLimit(f.Gas)
 
+	blockHeader, err := c.GetLatestBlockHeader(ctx, true)
+	handle(err)
+
+	tx.SetReferenceBlockID(blockHeader.ID)
+
 	err = tx.SignEnvelope(serviceAddress, serviceAccountKey.ID, serviceSigner)
 	handle(err)
 
