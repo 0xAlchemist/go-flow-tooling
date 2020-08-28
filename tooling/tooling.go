@@ -291,6 +291,11 @@ func (f *FlowConfig) sendTransactionRaw(filename string, signers []string, argum
 		tx.AddArgument(argument)
 	}
 
+	blockHeader, err := c.GetLatestBlockHeader(ctx, true)
+	handle(err)
+
+	tx.SetReferenceBlockID(blockHeader.ID)
+
 	//TODO: Refactor
 	for _, signerName := range signers {
 		envelopeAccount := f.Wallet.Accounts[signerAccountName]
