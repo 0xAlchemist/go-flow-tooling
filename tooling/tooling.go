@@ -313,7 +313,7 @@ func (f *FlowConfig) sendTransactionRaw(filename string, signers []string, argum
 	}
 	err = c.SendTransaction(ctx, *tx)
 	if err != nil {
-		log.Fatalf("%v Error sending the transaction.", emoji.PileOfPoo)
+		log.Fatalf("%v Error sending the transaction. %v", emoji.PileOfPoo, err)
 	}
 	result := WaitForSeal(ctx, c, tx.ID())
 	if result.Error != nil {

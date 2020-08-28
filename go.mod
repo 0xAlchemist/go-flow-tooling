@@ -10,5 +10,6 @@ require (
 	github.com/onflow/cadence v0.8.0
 	github.com/onflow/flow-go-sdk v0.9.0
 	github.com/pkg/errors v0.9.1
+	github.com/zalando/go-keyring v0.1.0
 	google.golang.org/grpc v1.31.0
 )
