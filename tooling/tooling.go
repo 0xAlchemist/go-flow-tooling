@@ -347,6 +347,8 @@ func (f *FlowConfig) RunScriptReturns(filename string, arguments ...cadence.Valu
 		log.Fatalf("%v Could not read script file from path=%s", emoji.PileOfPoo, scriptFilePath)
 	}
 
+	log.Printf("Arguments %v\n", arguments)
+	log.Println(code)
 	ctx := context.Background()
 	result, err := c.ExecuteScriptAtLatestBlock(ctx, code, arguments)
 	if err != nil {
