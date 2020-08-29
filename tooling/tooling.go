@@ -23,10 +23,11 @@ import (
 
 // FlowConfig holds all information to work on flow with a given set of accounts in a wallet
 type FlowConfig struct {
-	Service *Account
-	Wallet  *Wallet
-	Host    string
-	Gas     uint64
+	Service    *Account
+	Wallet     *Wallet
+	Host       string
+	Gas        uint64
+	ParentPath string
 }
 
 // Account represents a Flow account
@@ -80,8 +81,8 @@ func NewFlowAccount(path string) (*Account, error) {
 }
 
 // NewWalletDefault will create a default wallet
-func NewWalletDefault() (*Wallet, error) {
-	return NewWallet("./wallet.json")
+func NewWalletDefault(path string) (*Wallet, error) {
+	return NewWallet(fmt.Sprintf("%s/wallet.json", path))
 }
 
 // NewWallet will creat a wallet from the given path
@@ -115,7 +116,7 @@ func accountInfo(account *Account) (crypto.PrivateKey, crypto.SignatureAlgorithm
 
 // DeployContract will deploy a contract with the given name to an account with the same name from wallet.json
 func (f *FlowConfig) DeployContract(contractName string) {
-	contractPath := fmt.Sprintf("./contracts/%s.cdc", contractName)
+	contractPath := fmt.Sprintf("%s/contracts/%s.cdc", f.ParentPath, contractName)
 	//log.Printf("Deploying contract: %s at %s", contractName, contractPath)
 	code, err := ioutil.ReadFile(contractPath)
 	if err != nil {
@@ -175,6 +176,11 @@ func (f *FlowConfig) apply(contractName string, code []byte) {
 	tx.SetProposalKey(serviceAddress, serviceAccountKey.ID, serviceAccountKey.SequenceNumber)
 	tx.SetPayer(serviceAddress)
 	tx.SetGasLimit(f.Gas)
+
+	blockHeader, err := c.GetLatestBlockHeader(ctx, true)
+	handle(err)
+
+	tx.SetReferenceBlockID(blockHeader.ID)
 
 	err = tx.SignEnvelope(serviceAddress, serviceAccountKey.ID, serviceSigner)
 	handle(err)
@@ -268,7 +274,7 @@ func (f *FlowConfig) sendTransactionRaw(filename string, signers []string, argum
 
 	key := account.Keys[0]
 
-	txFilePath := fmt.Sprintf("./transactions/%s.cdc", filename)
+	txFilePath := fmt.Sprintf("%s/transactions/%s.cdc", f.ParentPath, filename)
 	code, err := ioutil.ReadFile(txFilePath)
 	if err != nil {
 		log.Fatalf("%v Could not read transaction file from path=%s", emoji.PileOfPoo, txFilePath)
@@ -284,6 +290,11 @@ func (f *FlowConfig) sendTransactionRaw(filename string, signers []string, argum
 	for _, argument := range arguments {
 		tx.AddArgument(argument)
 	}
+
+	blockHeader, err := c.GetLatestBlockHeader(ctx, true)
+	handle(err)
+
+	tx.SetReferenceBlockID(blockHeader.ID)
 
 	//TODO: Refactor
 	for _, signerName := range signers {
@@ -307,7 +318,7 @@ func (f *FlowConfig) sendTransactionRaw(filename string, signers []string, argum
 	}
 	err = c.SendTransaction(ctx, *tx)
 	if err != nil {
-		log.Fatalf("%v Error sending the transaction.", emoji.PileOfPoo)
+		log.Fatalf("%v Error sending the transaction. %v", emoji.PileOfPoo, err)
 	}
 	result := WaitForSeal(ctx, c, tx.ID())
 	if result.Error != nil {
@@ -330,12 +341,14 @@ func (f *FlowConfig) RunScriptReturns(filename string, arguments ...cadence.Valu
 		log.Fatalf("%v Error creating flow client", emoji.PileOfPoo)
 	}
 
-	scriptFilePath := fmt.Sprintf("./scripts/%s.cdc", filename)
+	scriptFilePath := fmt.Sprintf("%s/scripts/%s.cdc", f.ParentPath, filename)
 	code, err := ioutil.ReadFile(scriptFilePath)
 	if err != nil {
 		log.Fatalf("%v Could not read script file from path=%s", emoji.PileOfPoo, scriptFilePath)
 	}
 
+	log.Printf("Arguments %v\n", arguments)
+	log.Println(code)
 	ctx := context.Background()
 	result, err := c.ExecuteScriptAtLatestBlock(ctx, code, arguments)
 	if err != nil {
@@ -365,6 +378,30 @@ func WaitForSeal(ctx context.Context, c *client.Client, id flow.Identifier) *flo
 	return result
 }
 
+// NewFlowConfigLocalhostWithGas will create a flow configuration from local emulator and default files
+func NewFlowConfigLocalhostWithGas(gas int) *FlowConfig {
+	host := "127.0.0.1:3569"
+	serviceAccount, err := NewFlowAccount("./flow.json")
+	if err != nil {
+		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
+	}
+
+	return createFlowConfig(serviceAccount, host, uint64(gas), ".")
+
+}
+
+// NewFlowConfigLocalhostWithParentPath will create a flow configuration from local emulator and default files from a subdir
+func NewFlowConfigLocalhostWithParentPath(path string) *FlowConfig {
+	host := "127.0.0.1:3569"
+	serviceAccount, err := NewFlowAccount(fmt.Sprintf("%s/flow.json", path))
+	if err != nil {
+		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
+	}
+
+	return createFlowConfig(serviceAccount, host, uint64(9999), path)
+
+}
+
 // NewFlowConfigLocalhost will create a flow configuration from local emulator and default files
 func NewFlowConfigLocalhost() *FlowConfig {
 	host := "127.0.0.1:3569"
@@ -373,27 +410,29 @@ func NewFlowConfigLocalhost() *FlowConfig {
 		log.Fatalf("%v run 'flow emulator init' errorMessage=%v", emoji.PileOfPoo, err)
 	}
 
-	return createFlowConfig(serviceAccount, host, uint64(1000))
+	return createFlowConfig(serviceAccount, host, uint64(9999), ".")
 
 }
 
-func createFlowConfig(serviceAccount *Account, node string, gas uint64) *FlowConfig {
-	wallet, err := NewWalletDefault()
+func createFlowConfig(serviceAccount *Account, node string, gas uint64, path string) *FlowConfig {
+	wallet, err := NewWalletDefault(path)
 	if err != nil {
 		log.Fatalf("%v copy flow.json to wallet.json and specify new accounts with a given name %v", emoji.PileOfPoo, err)
 	}
 
 	return &FlowConfig{
-		Service: serviceAccount,
-		Wallet:  wallet,
-		Host:    node,
-		Gas:     gas,
+		Service:    serviceAccount,
+		Wallet:     wallet,
+		Host:       node,
+		Gas:        gas,
+		ParentPath: path,
 	}
 }
 
 // NewFlowConfigDevNet setup devnot like in https://www.notion.so/Accessing-Flow-Devnet-ad35623797de48c08d8b88102ea38131
 func NewFlowConfigDevNet() *FlowConfig {
-	host := "access-001.devnet7.nodes.onflow.org:9000"
+	host := "access-001.devnet12.nodes.onflow.org:9000"
+
 	flowConfigFile, err := homedir.Expand("~/.flow-dev.json")
 	if err != nil {
 		log.Fatalf("%v error %v", emoji.PileOfPoo, err)
@@ -402,5 +441,5 @@ func NewFlowConfigDevNet() *FlowConfig {
 	if err != nil {
 		log.Fatalf("%v Create a file in the location %s with your dev net credentials error:%v", emoji.PileOfPoo, flowConfigFile, err)
 	}
-	return createFlowConfig(serviceAccount, host, uint64(100))
+	return createFlowConfig(serviceAccount, host, uint64(9999), ".")
 }

@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 	host := "127.0.0.1:3569"
 	if *devPointer {
-		host = "access-001.devnet7.nodes.onflow.org:9000"
+		host = "access-001.devnet12.nodes.onflow.org:9000"
 	}
 
 	c, err := client.New(host, grpc.WithInsecure())
