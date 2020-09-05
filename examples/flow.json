@@ -1,5 +1,6 @@
 {
-	"address" : "127.0.0.1:3569", 
+	"address" : "127.0.0.1:3569",
+	"gasLimit" : 1000, 
 	"accounts": {
 		"service": {
 			"address": "f8d6e0586b0a20c7",
@@ -7,5 +8,9 @@
 			"sigAlgorithm": "ECDSA_P256",
 			"hashAlgorithm": "SHA3_256"
 		}
+	}, 
+	"emulatorAccounts" : {
+		"nft" : "01cf0e2f2f715450",
+		"ft" : "179b6b1cb6755e31"
 	}
 }
