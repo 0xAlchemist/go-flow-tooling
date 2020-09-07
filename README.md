@@ -1,4 +1,4 @@
-go-flow-tooling
+# go-flow-tooling is now deprecated! Use the [go-with-the-flow](https://github.com/bjartek/go-with-the-flow) instead :)
 
 1. `cd examples/`
 2. flow emulator start --verbose in terminal 1
